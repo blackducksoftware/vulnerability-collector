@@ -1,0 +1,225 @@
+<html>
+<head>
+<title> Black Duck Vulnerability Report </title>
+	<link rel="stylesheet" type="text/css" href="css/jquery.dataTables.css">
+	<link rel="stylesheet" type="text/css" href="css/vc_css.css">	
+	<link rel="stylesheet" type="text/css" href="js/tabletools/css/dataTables.tableTools.css"/>
+	
+	  
+	<script type="text/javascript" language="javascript" src="js/jquery.js"></script>
+	<script type="text/javascript" language="javascript" src="js/jquery.dataTables.min.js"></script>
+    <script type="text/javascript" language="javascript" src="js/tabletools/js/dataTables.tableTools.js"></script>
+	
+	<!-- Auto generated JSON file -->
+    <script src="jsondata/json_expanded.js"></script>
+	<script src="jsondata/json_expanded_unspecified.js"></script> 
+    <script src="jsondata/json_config.js"></script>
+	
+	<script type="text/javascript" language="javascript" class="init">
+
+$(document).ready(function() 
+{
+    // Create the title
+    var configProjectName = configData.projectName;
+    console.log("Configuration for project: " + configProjectName);
+	$(".title").append(" for " + configProjectName);
+
+	// Fill in relevant config options
+	var configOptionShowVersion = configData.props["vc.include.unspecified"];
+	var configOptionCCServer = configData.props["cc.server.name"];
+	var configOptionProtexServer = configData.props["protex.server.name"];
+	var dateGenerated = "Generated on: " + configData.projectDateCreated;
+	
+	var configBlock = $(".config_options");
+	//configBlock.append("Show unspecified: " + configOptionShowVersion + "<br>");
+	configBlock.append("CC Server: " + configOptionCCServer + "<br>");
+	configBlock.append("Protex Server: " + configOptionProtexServer + "<br>");
+	configBlock.append(dateGenerated + "<br>");
+	
+	document.title = "Vulnerability Report: " + configProjectName;
+	
+	// Populate the vulnerability table
+	
+    var cveDetailUrl = "https://web.nvd.nist.gov/view/vuln/detail?vulnId=";
+	var nColNumber = -1;
+	var table = $('#vuln-table').dataTable( 
+	{
+		"data": vcData,
+		"aLengthMenu": [50, 150, 350, 600],
+		"iDisplayLength": 50,
+		"aaSorting": [],
+		"columnDefs" : 
+		[
+			{ 
+				'targets': [ ++nColNumber ], 'title':'Version', 'name': 'vulnCount','data': 'vulnSummary','defaultContent': "0", "visible": false,
+				'render': function ( data, type, row ) 
+				{
+					if(data == undefined)
+						return "0";
+					else 
+						return "1";
+				}					
+			},
+			{
+			'targets': [ ++nColNumber ], 'title':'SevValue ', 'name': 'vulnSev', 'data': 'vulnSummary.severity', 'defaultContent': "0", "visible": false,
+				'render': function ( data, type, row ) 
+				{
+					if(data != undefined)
+					{
+						if(data == "LOW")
+							return "1";
+						else if(data == "MEDIUM")
+							return "2";
+						else if(data == "HIGH")
+							return "3";
+					}
+				}	
+			},
+			{ 'targets': [ ++nColNumber ], 'title':'Component Name', 'name': 'compName', 'data': 'compName',
+			   'render': function ( data, type, row ) 
+				{
+					//console.log("Row URL: " + row.compHomePage);
+                    return '<a href=' +  row.compHomePage + '>' +  data  + '</a>';
+				}			
+			},
+			{ 'targets': [ ++nColNumber ], 'title':'Version', 'name': 'compVersion', 'data': 'compVersion','defaultContent': "Unspecified" },
+			{ 
+			 'targets': [ ++nColNumber ], 'title':'Home Page', 'name': 'compHomePage', 'data': 'compHomePage', 'visible': false			 
+			},
+			{ // CVE Names
+				'targets': [ ++nColNumber ], 'title':'CVE ', 'name': 'vulnListCveName', 'data': 'vulnSummary','defaultContent': "",
+				'render': function ( data, type, row ) 
+				{
+					if(data != undefined)
+					{ 
+						var fullUrl = "<a href=" + cveDetailUrl + data.name.name + " target=_new>" + data.name.name + "</a>";
+						return fullUrl;
+					}                 
+				}					
+			},
+			{ 
+			'targets': [ ++nColNumber ], 'title':'Severity ', 'name': 'vulnSev', 'data': 'vulnSummary.severity','defaultContent': "",
+			"orderData" : [1]			
+			},
+			{ 'targets': [ ++nColNumber ], 'title':'Base Score ', 'name': 'vulnBase', 'data': 'vulnSummary.basescore','defaultContent': "" },
+			{ 'targets': [ ++nColNumber ], 'title':'Impact Score ', 'name': 'vulnImpact', 'data': 'vulnSummary.impactscore','defaultContent': "" },
+			{ 'targets': [ ++nColNumber ], 'title':'Exploitability ', 'name': 'vulnExploit', 'data': 'vulnSummary.exploitabilityscore','defaultContent': "" },
+			{ 'targets': [ ++nColNumber ], 'title':'Published ', 'name': 'vulnPublished', 'data': 'vulnSummary.published','defaultContent': "" },
+			{ 'targets': [ ++nColNumber ], 'title':'Description ', 'name': 'vulnDescription', 'data': 'vulnSummary.description','defaultContent': "" }
+		],	
+	} );
+	
+	// Set filter for only those components that have vulnerabilities.
+	table.fnFilter("1", 0);
+	
+	// Checkbox for filter
+	// If user toggles the checkbox, then it displays all components
+	// even if those components do not have vulnerabilities.
+	$('#fullBomCheckBox').change(function() 
+	{
+		var oSettings = table.fnSettings();	 
+		var compFilter = oSettings.aoPreSearchCols[ 0 ].sSearch;
+		if(compFilter == "" || compFilter == "0")
+		{
+			table.fnFilter("1", 0);
+		}
+		else if(compFilter == "1")
+		{
+			table.fnFilter("", 0);
+		}
+		console.log("Filter: " + compFilter);
+	});
+	
+	// Create Table Tools for export
+	var tt = new $.fn.dataTable.TableTools(table, {
+		"sSwfPath": "js/tabletools/swf/copy_csv_xls.swf",
+		"aButtons": [
+		{
+			'sExtends': "copy", 
+			"oSelectorOpts": { filter: 'applied', order: 'current' },
+		},
+		{
+			'sExtends': "csv", 
+			"oSelectorOpts": { filter: 'applied', order: 'current' },
+		},
+			"print"
+		]
+	});
+	
+	$('.export_buttons').append(tt.fnContainer());
+	
+	var versionToggle = true;
+	var versionDiv = $('.versionToggle');
+	var subTitleDiv = $('.subTitle');
+	// Toggle for switching between version and unspecified
+	versionDiv.on('click', function(e) 
+	{  
+		if(versionToggle)
+		{
+		    if(vcDataNoVersions.length == 0)
+			{
+			   alert("No components available to display");
+			   return;
+			}
+			table.fnClearTable();
+			table.fnAddData(vcDataNoVersions);
+			table.fnDraw(false);
+			subTitleDiv.text("[Unspecified Components Only] ");
+			versionToggle = false;
+		}
+		else
+		{
+		    if(vcData.length == 0)
+			{
+			   alert("No components available to display");
+			   return;
+			}
+			table.fnClearTable();
+			table.fnAddData(vcData);
+			table.fnDraw(false);
+			subTitleDiv.text(" [Versioned Components Only]");
+			versionToggle = true;
+		}
+		// Refresh table
+    });
+	
+} );
+
+	</script>
+
+</head>
+
+<body>
+<table width="100%"><tr>
+<td width="33%">
+<img src="images/bd_logo.png">
+</td>
+<td width="33%">
+<div class="title">Vulnerability Report</div>
+<div class="subTitle"></div>
+</td>
+<td width="33%">
+<div class="config_options" float="right">Config Options: <br></div>
+
+<td>
+</tr>
+</table>
+
+<table width="100%">
+<tr>
+<td>
+<div class="export_buttons" float="left"></div>
+</td>
+<td>
+<div class="versionToggle">Toggle Version List</div>
+</td>
+<td>
+<div class="fullBomCheckBox"><input type="checkbox" id="fullBomCheckBox" default="checked"/>Full BOM<br /></div>
+</td>
+</tr>
+</table>
+<table id="vuln-table" class="display" cellspacing="0" width="100%"></table>
+
+</body>
+
+</html>

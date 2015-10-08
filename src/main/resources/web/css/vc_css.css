@@ -1,0 +1,44 @@
+.title
+{
+	font-family: "Helvetica";
+	font-size: 25px;
+	text-align: center;
+}
+
+.subTitle
+{
+	font-family: "Helvetica";
+	font-size: 17px;
+	text-align: center;
+}
+
+.logo
+{
+}
+
+.config_options
+{
+	font-family: "Helvetica";
+	font-size: 9px;
+	float: right;
+	vertical-align: text-top;
+}
+
+.fullBomCheckBox
+{
+	font-family: "Helvetica";
+	font-size: 14px;
+	float: right;
+	padding-bottom: 20px;
+}
+
+.versionToggle
+{
+	font-family: "Helvetica";
+	font-weight: bold;
+	float: left;
+	text-align: left;
+	text-decoration: underline;
+	cursor: hand;
+	color: darkBlue;
+}
